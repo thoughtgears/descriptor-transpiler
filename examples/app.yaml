@@ -1,0 +1,35 @@
+# app.yaml
+
+# The version of the application spec. This is the "contract" that the
+# platform guarantees it will honor.
+apiVersion: v1
+
+# --- Metadata ---
+# High-level information about the application.
+name: super-service
+tribe: platform
+team: infrastructure
+type: web-application
+public: true
+size: medium
+
+# --- Dependencies ---
+# A declarative list of external resources this application needs.
+# The platform is responsible for provisioning and configuring these.
+dependencies:
+  database:
+    type: postgres
+    size: small
+  cache:
+    type: redis
+
+# --- Components ---
+# Extended components that will be part of this application
+# but is not the main web service.
+components:
+  - name: db-partition-maintenance
+    dockerfile: Dockerfile.maintenance
+    type: cron-job # The platform knows how to translate this to a K8s CronJob/Job.
+    size: small
+    schedule: "45 9 * * *" # The business logic is clear.
+    command: ["./db_partition_maintenance"]
