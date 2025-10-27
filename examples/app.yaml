@@ -20,3 +20,4 @@ dependencies:
   database:
     type: postgres
     size: small
+    version: 17

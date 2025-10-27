@@ -7,17 +7,23 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
+type Dependency struct {
+	Type    string                 `yaml:"type"`
+	Size    string                 `yaml:"size,omitempty"`
+	Version int                    `yaml:"version,omitempty"`
+	Config  map[string]interface{} `yaml:"config,omitempty"` // For future expansion
+}
+
 // AppSpec represents the application configuration from app.yaml
 type AppSpec struct {
-	APIVersion   string                 `yaml:"apiVersion"`
-	Name         string                 `yaml:"name"`
-	Tribe        string                 `yaml:"tribe"`
-	Team         string                 `yaml:"team"`
-	Type         string                 `yaml:"type"`
-	Public       bool                   `yaml:"public"`
-	Size         string                 `yaml:"size"`
-	Dependencies map[string]interface{} `yaml:"dependencies,omitempty"`
-	Components   []interface{}          `yaml:"components,omitempty"`
+	APIVersion   string                `yaml:"apiVersion"`
+	Name         string                `yaml:"name"`
+	Tribe        string                `yaml:"tribe"`
+	Team         string                `yaml:"team"`
+	Type         string                `yaml:"type"`
+	Public       bool                  `yaml:"public"`
+	Size         string                `yaml:"size"`
+	Dependencies map[string]Dependency `yaml:"dependencies,omitempty"`
 }
 
 // LoadAppSpec reads and parses the app.yaml file
@@ -65,6 +71,35 @@ func (a *AppSpec) validateSize() error {
 // ToChartSize converts the string size to the Size type from charts.go
 func (a *AppSpec) ToChartSize() Size {
 	return Size(a.Size)
+}
+
+func (a *AppSpec) GetDependency(name string) (Dependency, bool) {
+	dep, exists := a.Dependencies[name]
+	return dep, exists
+}
+
+func (a *AppSpec) HasDatabase() bool {
+	db, exists := a.GetDependency("database")
+	return exists && db.Type == "postgres"
+}
+
+func (a *AppSpec) GetDatabaseConfig() (size string, version int, err error) {
+	db, exists := a.GetDependency("database")
+	if !exists {
+		return "", 0, fmt.Errorf("no database dependency found")
+	}
+
+	size = db.Size
+	if size == "" {
+		size = "small" // default
+	}
+
+	version = db.Version
+	if version == 0 {
+		version = 17 // default
+	}
+
+	return size, version, nil
 }
 
 // BuildLabels creates Kubernetes labels from AppSpec
