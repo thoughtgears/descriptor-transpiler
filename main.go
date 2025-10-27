@@ -25,4 +25,13 @@ func main() {
 
 	config.NewCore(app, config.Name)
 	config.Render(app)
+
+	tf, err := NewTerraformConfiguration("europe-west2", WithDatabase(appSpec.Name, appSpec.Size, 17))
+	if err != nil {
+		log.Fatalf("error generating terraform: %v", err)
+	}
+
+	if err := tf.WriteFile(); err != nil {
+		log.Fatalf("error writing terraform file: %v", err)
+	}
 }
